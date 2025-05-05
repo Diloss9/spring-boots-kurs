@@ -1,17 +1,24 @@
 package oneMan.Kurs.Jakub;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 @SpringBootTest
 class JakubApplicationTests {
 
+	@Autowired
+	private MockMvc mockMvc;
+
+
 	@Test
-	void contextLoads() {
-		// This test method is intentionally left empty.
-		// It is used to check if the Spring application context loads successfully.
-		// If there are any issues with the application context, this test will fail.
-		// You can add additional test cases here as needed.
+	void contextLoads() throws Exception {
+		this.mockMvc.perform(get("/persons"))
+				.andExpect(status().isOk());
 	}
 
 }
