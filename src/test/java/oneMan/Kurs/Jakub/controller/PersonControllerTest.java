@@ -16,7 +16,7 @@ class TestForProject {
 	@Autowired
 	private MockMvc mockMvc;
 
-
+	
 	@Test
 	void checkForPersons() throws Exception {
 		this.mockMvc.perform(get("/persons"))
