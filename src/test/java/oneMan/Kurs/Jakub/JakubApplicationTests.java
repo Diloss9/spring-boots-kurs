@@ -16,7 +16,7 @@ class JakubApplicationTests {
 
 
 	@Test
-	void contextLoads() throws Exception {
+	void checkForPersons() throws Exception {
 		this.mockMvc.perform(get("/persons"))
 				.andExpect(status().isOk());
 	}
