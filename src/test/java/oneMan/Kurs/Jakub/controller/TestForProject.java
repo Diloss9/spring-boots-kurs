@@ -1,4 +1,4 @@
-package oneMan.Kurs.Jakub;
+package oneMan.Kurs.Jakub.controller;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class JakubApplicationTests {
+class TestForProject {
 
 	@Autowired
 	private MockMvc mockMvc;
