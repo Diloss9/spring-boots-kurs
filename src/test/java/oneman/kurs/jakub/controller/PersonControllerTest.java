@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -31,8 +32,8 @@ class PersonControllerTest {
 
 				.andExpect(jsonPath("$[*].date_of_birth").isNotEmpty())
 
-				.andExpect(jsonPath("$[1].first_name").is("Max"))
-				.andExpect(jsonPath("$[1].last_name").is("Mustermann"))
-				.andExpect(jsonPath("$[1].date_of_birth").is("1997-06-23"));
+				.andExpect(jsonPath("$[1].first_name", is("Max")))
+				.andExpect(jsonPath("$[1].last_name", is("Mustermann")))
+				.andExpect(jsonPath("$[1].date_of_birth", is("1997-06-23")));
 	}
 }
