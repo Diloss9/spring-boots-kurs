@@ -31,8 +31,8 @@ class PersonControllerTest {
 
 				.andExpect(jsonPath("$[*].date_of_birth").isNotEmpty())
 
-				.andExpect(jsonPath("$[1].first_name").value("Max"))
-				.andExpect(jsonPath("$[1].last_name").value("Mustermann"))
-				.andExpect(jsonPath("$[1].date_of_birth").value("1997-06-23"));
+				.andExpect(jsonPath("$[1].first_name").is("Max"))
+				.andExpect(jsonPath("$[1].last_name").is("Mustermann"))
+				.andExpect(jsonPath("$[1].date_of_birth").is("1997-06-23"));
 	}
 }
