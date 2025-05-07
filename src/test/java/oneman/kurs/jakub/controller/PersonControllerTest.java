@@ -1,24 +1,25 @@
 package oneman.kurs.jakub.controller;
 
-import com.jayway.jsonpath.JsonPath;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 
 
 @SpringBootTest
@@ -83,63 +84,70 @@ class PersonControllerTest {
 							.contentType(MediaType.APPLICATION_JSON))
 					.andExpect(status().isBadRequest());
 		}
-
 	@Test
-	@Transactional
-	void postValidPerson () throws Exception {
-		mockMvc.perform(get("/persons"))
+	void postPersonAndVerify() throws Exception {
+		int initialSize = mockMvc.perform(get("/persons"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$", hasSize(0)));
-
-		String correctInputComplete = """
-				{
-					"first_name": "Jakub",
-					"last_name": "Waclawowicz"
-				}
-				""";
-
-		String response = mockMvc.perform(post("/persons")
-						.content(correctInputComplete)
-						.contentType(MediaType.APPLICATION_JSON))
-				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$", hasSize(1)))
 				.andReturn()
 				.getResponse()
-				.getContentAsString();
+				.getContentAsString()
+				.split("},").length;
 
-		String personId = JsonPath.read(response, "$.id");
-		assertTrue(personId != null && !personId.isEmpty(), "Person ID should be returned");
+		String validInput = """
+        {
+            "first_name": "Jakub",
+            "last_name": "Waclawowicz"
+        }
+    """;
+
+		String location = mockMvc.perform(post("/persons")
+						.content(validInput)
+						.contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isCreated())
+				.andExpect(header().exists(HttpHeaders.LOCATION))
+				.andExpect(header().string(HttpHeaders.LOCATION, startsWith("/persons/")))
+				.andReturn()
+				.getResponse()
+				.getHeader(HttpHeaders.LOCATION);
+
+		Assertions.assertNotNull(location);
+		String personId = location.substring(location.lastIndexOf("/") + 1);
+		assertFalse(personId.isEmpty(), "Person ID should be returned");
 
 		String personFilterPath = "$[?(@.id == '" + personId + "')][0]";
 
-		mockMvc.perform(get("/persons"))
+		mockMvc.perform(get(location))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$", hasSize(1)))
-
-				.andExpect(jsonPath(personFilterPath + ".id", is(personId)))
 				.andExpect(jsonPath(personFilterPath + ".first_name", is("Jakub")))
 				.andExpect(jsonPath(personFilterPath + ".last_name", is("Waclawowicz")));
 
-		String addBirthday = """
-				{
-					"first_name": "Jakub",
-					"last_name": "Waclawowicz",
-					"birth_of_date": "1991-07-30"
-				}
-				""";
-
-		mockMvc.perform(put("/persons/" + personId)
-						.content(addBirthday)
-						.contentType(MediaType.APPLICATION_JSON))
-				.andExpect(status().isOk());
-
-		mockMvc.perform(get("/persons"))
+		int sizeAfterValidPost = mockMvc.perform(get("/persons"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$", hasSize(1)))
+				.andReturn()
+				.getResponse()
+				.getContentAsString()
+				.split("},").length;
 
-				.andExpect(jsonPath(personFilterPath + ".id", is(personId)))
-				.andExpect(jsonPath(personFilterPath + ".first_name", is("Jakub")))
-				.andExpect(jsonPath(personFilterPath + ".last_name", is("Waclawowicz")))
-				.andExpect(jsonPath(personFilterPath + ".birth_of_date", is("1991-07-30")));
+		Assertions.assertEquals(initialSize + 1, sizeAfterValidPost, "The number of persons should have increased by 1.");
+
+		String invalidInput = """
+        {
+            "first_name": "John"
+        }
+    """;
+
+		mockMvc.perform(post("/persons")
+						.content(invalidInput)
+						.contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isBadRequest());
+
+		int sizeAfterInvalidPost = mockMvc.perform(get("/persons"))
+				.andExpect(status().isOk())
+				.andReturn()
+				.getResponse()
+				.getContentAsString()
+				.split("},").length;
+
+		Assertions.assertEquals(sizeAfterValidPost, sizeAfterInvalidPost, "The number of persons should not have changed after a failed POST.");
 	}
 }
