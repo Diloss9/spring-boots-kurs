@@ -2,11 +2,14 @@ package oneman.kurs.jakub.controller;
 
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -44,46 +47,50 @@ class PersonControllerTest {
 				.andExpect(jsonPath("$[1].date_of_birth", is("1997-06-23")));
 	}
 
-	@Test
-	void postInvalidPerson() throws Exception {
-		testInvalidPerson("{}");
-		testInvalidPerson("{ \"first_name\": null }");
-		testInvalidPerson("{ \"last_name\": null }");
-		testInvalidPerson("{ \"first_name\": \"\" }");
-		testInvalidPerson("{ \"last_name\": \"\" }");
-		testInvalidPerson("{ \"first_name\": \"A\" }");
-		testInvalidPerson("{ \"first_name\": \"A very long first name that exceeds the limit\" }");
-		testInvalidPerson("{ \"first_name\": \"John!@#\" }");
-		testInvalidPerson("{ \"last_name\": \"Doe!@#\" }");
-		testInvalidPerson("{ \"birth_of_date\": \"31-12-1991\" }");
-		testInvalidPerson("{ \"birth_of_date\": \"1991/12/31\" }");
-		testInvalidPerson("{ \"first_name\": \"John\", \"unknown_field\": \"value\" }");
-		testInvalidPerson("{ \"first_name\": \"John\", \"last_name\": \"Doe\", \"extra_field\": \"value\" }");
-		testInvalidPerson("{ \"first_name\": \"John\" }");
-		testInvalidPerson("{ \"first_name\": null, \"last_name\": \"Doe\" }");
-		testInvalidPerson("{ \"first_name\": \"John\", \"last_name\": null }");
-		testInvalidPerson("{ \"first_name\": \"John \"Doe\"\" }");
-		testInvalidPerson("{ \"birth_of_date\": \"2025-02-30\" }");
-		testInvalidPerson("{ \"birth_of_date\": \"9999-12-31\" }");
-		testInvalidPerson("{ \"birth_of_date\": \"0001-01-01\" }");
-		testInvalidPerson("{ \"birth_of_date\": \"text\" }");
-		testInvalidPerson("{ \"first_name\": 123 }");
-		testInvalidPerson("{ \"first_name\": \"123\", \"last_name\": \"456\" }");
-		testInvalidPerson("{ \"first_name\": \"John\", \"last_name\": \"Doe\" ");
-		testInvalidPerson("{ \"first_name\": \"John\" , \"last_name\": \"Doe\", }");
-		testInvalidPerson("{ \"first_name\": \"John \"Doe\"\" }");
-	}
+	@ParameterizedTest
+	@CsvSource({
+			"'{}'",
+			"'{\"first_name\": null }'",
+			"'{\"last_name\": null }'",
+			"'{\"first_name\": \"\" }'",
+			"'{\"last_name\": \"\" }'",
+			"'{\"first_name\": \"A\" }'",
+			"'{\"first_name\": \"A very long first name that exceeds the limit\" }'",
+			"'{\"first_name\": \"John!@#\" }'",
+			"'{\"last_name\": \"Doe!@#\" }'",
+			"'{\"birth_of_date\": \"31-12-1991\" }'",
+			"'{\"birth_of_date\": \"1991/12/31\" }'",
+			"'{\"first_name\": \"John\", \"unknown_field\": \"value\" }'",
+			"'{\"first_name\": \"John\", \"last_name\": \"Doe\", \"extra_field\": \"value\" }'",
+			"'{\"first_name\": \"John\" }'",
+			"'{\"first_name\": null, \"last_name\": \"Doe\" }'",
+			"'{\"first_name\": \"John\", \"last_name\": null }'",
+			"'{\"first_name\": \"John \"Doe\"\" }'",
+			"'{\"birth_of_date\": \"2025-02-30\" }'",
+			"'{\"birth_of_date\": \"9999-12-31\" }'",
+			"'{\"birth_of_date\": \"0001-01-01\" }'",
+			"'{\"birth_of_date\": \"text\" }'",
+			"'{\"first_name\": 123 }'",
+			"'{\"first_name\": \"123\", \"last_name\": \"456\" }'",
+			"'{\"first_name\": \"John\", \"last_name\": \"Doe\" '",
+			"'{\"first_name\": \"John\" , \"last_name\": \"Doe\", }'",
+			"'{\"first_name\": \"John \"Doe\"\" }'"
+		})
 
-	private void testInvalidPerson(String input) throws Exception {
-		mockMvc.perform(post("/persons")
-						.content(input)
-						.contentType(MediaType.APPLICATION_JSON))
-				.andExpect(jsonPath("$", hasSize(3)))
-				.andExpect(status().isBadRequest());
-	}
+		void postInvalidPerson (String input) throws Exception {
+			mockMvc.perform(post("/persons")
+							.content(input)
+							.contentType(MediaType.APPLICATION_JSON))
+					.andExpect(status().isBadRequest());
+		}
 
 	@Test
+	@Transactional
 	void postValidPerson () throws Exception {
+		mockMvc.perform(get("/persons"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$", hasSize(0)));
+
 		String correctInputComplete = """
 				{
 					"first_name": "Jakub",
@@ -95,6 +102,7 @@ class PersonControllerTest {
 						.content(correctInputComplete)
 						.contentType(MediaType.APPLICATION_JSON))
 				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$", hasSize(1)))
 				.andReturn()
 				.getResponse()
 				.getContentAsString();
@@ -106,7 +114,7 @@ class PersonControllerTest {
 
 		mockMvc.perform(get("/persons"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$", hasSize(4)))
+				.andExpect(jsonPath("$", hasSize(1)))
 
 				.andExpect(jsonPath(personFilterPath + ".id", is(personId)))
 				.andExpect(jsonPath(personFilterPath + ".first_name", is("Jakub")))
@@ -127,7 +135,7 @@ class PersonControllerTest {
 
 		mockMvc.perform(get("/persons"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$", hasSize(4)))
+				.andExpect(jsonPath("$", hasSize(1)))
 
 				.andExpect(jsonPath(personFilterPath + ".id", is(personId)))
 				.andExpect(jsonPath(personFilterPath + ".first_name", is("Jakub")))
