@@ -118,8 +118,8 @@ class PersonControllerTest {
 
 		mockMvc.perform(get(location))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath(personFilterPath + ".first_name", is("Jakub")))
-				.andExpect(jsonPath(personFilterPath + ".last_name", is("Waclawowicz")));
+				.andExpect(jsonPath("$.first_name", is("Jakub")))
+				.andExpect(jsonPath("$.last_name", is("Waclawowicz")));
 
 		int sizeAfterValidPost = mockMvc.perform(get("/persons"))
 				.andExpect(status().isOk())
