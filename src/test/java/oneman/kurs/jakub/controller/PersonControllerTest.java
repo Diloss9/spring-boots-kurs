@@ -114,7 +114,6 @@ class PersonControllerTest {
 		String personId = location.substring(location.lastIndexOf("/") + 1);
 		assertFalse(personId.isEmpty(), "Person ID should be returned");
 
-		String personFilterPath = "$[?(@.id == '" + personId + "')][0]";
 
 		mockMvc.perform(get(location))
 				.andExpect(status().isOk())
